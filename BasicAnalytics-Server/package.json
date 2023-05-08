@@ -1,0 +1,14 @@
+{
+  "name": "basic_analytics",
+  "version": "1.0.0",
+  "description": "backend for extremely basic analytics service",
+  "author": "Joseph Pecoraro <jpecoraro342@gmail.com>",
+  "main": "server.js",
+  "scripts": {
+    "start": "node ./server.js"
+  },
+  "dependencies": {
+    "express": "^4.16.1",
+    "pg": "^8.10.0"
+  }
+}
