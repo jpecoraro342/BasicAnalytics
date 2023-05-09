@@ -2,7 +2,8 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const Pool = require('pg').Pool;
+const { insertEvent, pool } = require('./queries');
+require('express-async-errors');
 
 // Constants
 const PORT = 8080;
@@ -14,62 +15,54 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// Postgres
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  host: process.env.DB_HOST || 'db',
-  database: process.env.DB_NAME || 'DB_NAME',
-  port: 5432,
+// Routes
+app.get('/status', async (req, res) => {
+  const result = await pool.query('SELECT NOW()');
+  res.status(200).json({ result: result.rows });
 });
 
-// Routes
-app.get('/status', (req, res) => {
-  pool.query('SELECT NOW()', (err, results) => {
-    res.json({ 'status': err || results.rows });
+app.post('/event', async (req, res) => {
+  let data = req.body[0];
+
+  const result = (await insertEvent(data)).rows[0];
+  res.status(201).json({ event: result });
+});
+
+app.post('/events', async (req, res) => {
+  let events = req.body;
+
+  let results = await Promise.all(events.map(async (event) => {
+    try {
+      var event = (await insertEvent(event)).rows[0];
+    } catch (err) {
+      var error = err;
+    }
+
+    return { event, error };
+  }));
+
+  let successfulEvents = results
+    .filter(event => !event.error)
+    .map(event => event.event);
+
+  let errors = results
+    .filter(event => event.error)
+    .map(event => event.error);
+
+  res.status(200).json({
+    ...(!req.query['low-data'] && {
+      events: successfulEvents,
+      errors: errors,
+     }),
+    successCount: successfulEvents.length,
+    errorCount: errors.length,
   });
 });
 
-app.post('/event', (req, res) => {
-  let data = req.body[0];
-
-  pool.query(`
-  INSERT INTO events (
-    device_identifier,
-    user_identifier,
-    event_name,
-    event_location,
-    extras,
-    event_time,
-    experiments,
-    app_name,
-    app_version,
-    app_build_number,
-    device_type,
-    os_version
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-  RETURNING id, event_name, event_time;
-`, [data.device_identifier,
-    data.user_identifier,
-    data.event_name,
-    data.event_location,
-    data.extras,
-    data.event_time,
-    data.experiments,
-    data.app_name,
-    data.app_version,
-    data.app_build_number,
-    data.device_type,
-    data.os_version],
-    (error, results) => {
-      if (error) {
-        res.json({ 'error': error });
-      }
-
-      const result = results.rows[0];
-      res.status(201).json({ result });
-    })
-});
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.json({ error: err });
+})
 
 var server = app.listen(process.env.PORT || PORT, HOST, () => {
   console.log(`Running on http://${HOST}:${server.address().port}`);
