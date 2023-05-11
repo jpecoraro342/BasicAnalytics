@@ -22,17 +22,25 @@ app.get('/status', async (req, res) => {
 });
 
 app.post('/event', async (req, res) => {
-  let data = req.body[0];
+  let data = req.body;
+
+  console.log(data);
 
   const result = (await insertEvent(data)).rows[0];
   res.status(201).json({ event: result });
 });
 
 app.post('/events', async (req, res) => {
-  let events = req.body;
+  let events = req.body.events;
+  let system = req.body.system;
+
+  if (system) {
+    events = events.map(event => { return Object.assign(system, event)});
+  }
 
   let results = await Promise.all(events.map(async (event) => {
     try {
+      // TODO: add support for seperate system fields
       var event = (await insertEvent(event)).rows[0];
     } catch (err) {
       var error = err;
