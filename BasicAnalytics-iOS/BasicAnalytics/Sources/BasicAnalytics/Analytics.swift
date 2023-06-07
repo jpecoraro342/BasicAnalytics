@@ -1,39 +1,55 @@
 import Foundation
+import os
 
 public class Analytics {
     
-    var uploader : Uploader
-    var configuration : Configuration?
+    var uploader : Uploader?
     
     public static let shared = Analytics()
     
-    private init() {
-        uploader = Uploader()
+    private init() {}
+    
+    public func initialize(_ configuration: Configuration) {
+        uploader = Uploader(configuration: configuration)
     }
     
-    func initialize(_ configuration: Configuration) {
-        
+    public func initialize(_ url: URL) {
+        uploader = Uploader(configuration: Configuration(url: url))
     }
     
-    func initialize(_ url: URL) {
+    public func logEvent(_ event: Event) {
+        guard let uploader = uploader else {
+            Logger.analytics.error("Failed to log event: \(event.eventName ?? ""). Please initialize the analytics library with Analytics.shared.initialize() to log events")
+            return
+        }
         
+        uploader.logEvent(event)
     }
     
-    func logEvent(_ event: Event) {
-        
-    }
-    
-    func logEvent(_ eventName: String) {
-        
+    public func logEvent(_ eventName: String) {
+        logEvent(Event(eventName: eventName))
     }
 }
 
-struct Configuration {
-    let url: URL
-    let uploadOnBackground = true
-    let uploadOnStart = true
-    let eventUploadThreshold = 20
-    let tempFileName: String? = nil
+public struct Configuration {
+    var url: URL
+    var uploadOnBackground = true
+    var uploadOnForeground = true
+    var eventUploadThreshold = 20
+    var uploadTimeout = 10.0
+    var tempFileName: String? = nil
     /// 0 to disable upload on a timer
-    let uploadTimerSeconds = 120
+    var uploadTimerSeconds = 120
+    var enableSystemFields = true
+    
+    public init(url: URL, uploadOnBackground: Bool = true, uploadOnForeground: Bool = true, eventUploadThreshold: Int = 20, uploadTimeout: Double = 10.0, tempFileName: String? = nil, uploadTimerSeconds: Int = 120, enableSystemFields: Bool = true) {
+        self.url = url
+        self.uploadOnBackground = uploadOnBackground
+        self.uploadOnForeground = uploadOnForeground
+        self.eventUploadThreshold = eventUploadThreshold
+        self.uploadTimeout = uploadTimeout
+        self.tempFileName = tempFileName
+        self.uploadTimerSeconds = uploadTimerSeconds
+        self.enableSystemFields = enableSystemFields
+    }
 }

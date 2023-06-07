@@ -57,6 +57,8 @@ app.post('/events', async (req, res) => {
     .filter(event => event.error)
     .map(event => event.error);
 
+  // TODO: Save event success/error count w/trigger
+
   res.status(200).json({
     ...(!req.query['low-data'] && {
       events: successfulEvents,

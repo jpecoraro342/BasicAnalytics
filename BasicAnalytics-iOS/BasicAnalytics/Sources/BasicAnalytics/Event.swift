@@ -7,32 +7,43 @@
 
 import Foundation
 
-public protocol Event {
-    var userIdentifier: String? { get }
-    var eventName: String? { get }
-    var eventLocation: String? { get }
-    var extras: [String: Any] { get }
-    var eventTime: Date { get }
-    var experiments: [String] { get }
+public struct Event {
+    var userIdentifier: String? = nil
+    var eventName: String? = nil
+    var eventLocation: String? = nil
+    // TODO: Change this to String : AnyCodable
+    var extras: [String: String] = [:]
+    var eventTime: Date = Date()
+    var experiments: [String] = []
+    
+    public init(userIdentifier: String? = nil, eventName: String? = nil, eventLocation: String? = nil, extras: [String : String] = [:], eventTime: Date = Date(), experiments: [String] = []) {
+        self.userIdentifier = userIdentifier
+        self.eventName = eventName
+        self.eventLocation = eventLocation
+        self.extras = extras
+        self.eventTime = eventTime
+        self.experiments = experiments
+    }
 }
 
-extension Event {
-    var userIdentifier: String? { return nil }
-    var eventName: String? { return nil }
-    var eventLocation: String? { return nil }
-    var extras: [String: Any] { return [:] }
-    var eventTime: Date { return Date() }
-    var experiments: [String] { return [] }
-}
+extension Event : Codable {}
 
 struct SystemFields {
-    let deviceIdentifier: String?
-    let appName: String? = Bundle.main.appName
-    let appVersion: String? = Bundle.main.appVersionLong
-    let appBuildNumber: String? = Bundle.main.appBuild
-    let deviceType: String?
-    let os: String?
-    let osVersion: String?
+    var deviceIdentifier: String?
+    var appName: String? = Bundle.main.appName
+    var appVersion: String? = Bundle.main.appVersionLong
+    var appBuildNumber: String? = Bundle.main.appBuild
+    var deviceType: String?
+    var os: String?
+    var osVersion: String?
+}
+
+extension SystemFields : Codable {}
+
+struct EventsBody : Codable {
+    let events : [Event]
+    let system : SystemFields
+    let trigger : String
 }
 
 #if canImport(UIKit)
@@ -42,15 +53,15 @@ import UIKit
 extension SystemFields {
     static func current() -> SystemFields {
         return SystemFields(
-            deviceIdentifier: UIDevice.current.identifierForVender?.uuidString,
-            deviceType: UIDevice.current.modelName,
+            deviceIdentifier: UIDevice.current.identifierForVendor?.uuidString,
+            deviceType: UIDevice.current.modelName(),
             os: UIDevice.current.systemName,
             osVersion: UIDevice.current.systemVersion)
     }
 }
 
 private extension UIDevice {
-    let modelName: String = {
+    func modelName() -> String? {
         var systemInfo = utsname()
         uname(&systemInfo)
         let machineMirror = Mirror(reflecting: systemInfo.machine)
@@ -58,7 +69,9 @@ private extension UIDevice {
             guard let value = element.value as? Int8, value != 0 else { return identifier }
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
-    }()
+        
+        return identifier
+    }
 }
 
 #else
