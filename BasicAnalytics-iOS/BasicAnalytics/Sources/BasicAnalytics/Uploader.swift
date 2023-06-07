@@ -32,6 +32,10 @@ internal class Uploader : NSObject {
         events.append(event)
         
         Logger.analytics.debug("Event: \(event.eventName ?? "")")
+        
+        if events.count >= configuration.eventUploadThreshold {
+            uploadPendingEvents("Threshold Count: \(events.count)")
+        }
     }
     
     private func uploadPendingEvents(_ trigger: String) {

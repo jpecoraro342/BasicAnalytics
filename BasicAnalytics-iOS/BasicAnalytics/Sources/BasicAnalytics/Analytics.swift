@@ -35,14 +35,14 @@ public struct Configuration {
     var url: URL
     var uploadOnBackground = true
     var uploadOnForeground = true
-    var eventUploadThreshold = 20
+    var eventUploadThreshold = 40
     var uploadTimeout = 10.0
     var tempFileName: String? = nil
     /// 0 to disable upload on a timer
     var uploadTimerSeconds = 120
     var enableSystemFields = true
     
-    public init(url: URL, uploadOnBackground: Bool = true, uploadOnForeground: Bool = true, eventUploadThreshold: Int = 20, uploadTimeout: Double = 10.0, tempFileName: String? = nil, uploadTimerSeconds: Int = 120, enableSystemFields: Bool = true) {
+    public init(url: URL, uploadOnBackground: Bool = true, uploadOnForeground: Bool = true, eventUploadThreshold: Int = 40, uploadTimeout: Double = 10.0, tempFileName: String? = nil, uploadTimerSeconds: Int = 120, enableSystemFields: Bool = true) {
         self.url = url
         self.uploadOnBackground = uploadOnBackground
         self.uploadOnForeground = uploadOnForeground
