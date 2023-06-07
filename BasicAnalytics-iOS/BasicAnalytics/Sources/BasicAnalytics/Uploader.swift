@@ -54,12 +54,21 @@ internal class Uploader : NSObject {
         }
         
         do {
-            // TODO: Maybe only send system fields up with one event instead of all of them
-            var request = URLRequest(url: configuration.url, timeoutInterval: configuration.uploadTimeout)
-            request.httpMethod = "POST"
-            request.httpBody = try JSONEncoder().encode(EventsBody(events: events, system: systemFields, trigger: trigger))
+            guard let url = configuration.url.with(queryItems: [URLQueryItem(name: "low-data", value: "true")]) else {
+                Logger.analytics.warning("Error appending low-data response to query item")
+                return
+            }
             
-            let response = try await URLSession.shared.data(for: request)
+            var request = URLRequest(url: url, timeoutInterval: configuration.uploadTimeout)
+            request.httpMethod = "POST"
+            request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+            
+            let encoder = JSONEncoder()
+            encoder.keyEncodingStrategy = .convertToSnakeCase
+            encoder.dateEncodingStrategy = .iso8601
+            let body = try encoder.encode(EventsBody(events: events, system: systemFields, trigger: trigger))
+            
+            let response = try await URLSession.shared.upload(for: request, from: body)
             logResponse(response)
         } catch {
             Logger.analytics.error("Error while attempting to upload events \(error.localizedDescription, privacy: .public)")
@@ -164,3 +173,19 @@ extension Uploader {
 }
 
 #endif
+
+extension URL {
+    /// Returns a new URL by adding the query items, or nil if the URL doesn't support it.
+    /// URL must conform to RFC 3986.
+    func with(queryItems: [URLQueryItem]) -> URL? {
+        guard var urlComponents = URLComponents(url: self, resolvingAgainstBaseURL: true) else {
+            // URL is not conforming to RFC 3986 (maybe it is only conforming to RFC 1808, RFC 1738, and RFC 2732)
+            return nil
+        }
+        // append the query items to the existing ones
+        urlComponents.queryItems = (urlComponents.queryItems ?? []) + queryItems
+
+        // return the url from new url components
+        return urlComponents.url
+    }
+}
