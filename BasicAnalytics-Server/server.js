@@ -35,7 +35,7 @@ app.post('/events', async (req, res) => {
   let system = req.body.system;
 
   if (system) {
-    events = events.map(event => { return Object.assign(system, event)});
+    events = events.map(event => { return Object.assign(event, system)});
   }
 
   let results = await Promise.all(events.map(async (event) => {
