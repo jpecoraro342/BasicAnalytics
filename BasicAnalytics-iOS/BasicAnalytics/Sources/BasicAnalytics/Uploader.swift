@@ -67,6 +67,10 @@ internal class Uploader : NSObject {
             request.httpMethod = "POST"
             request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             
+            for (key, value) in configuration.httpHeaderFields {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+            
             let encoder = JSONEncoder()
             encoder.keyEncodingStrategy = .convertToSnakeCase
             encoder.dateEncodingStrategy = .iso8601
