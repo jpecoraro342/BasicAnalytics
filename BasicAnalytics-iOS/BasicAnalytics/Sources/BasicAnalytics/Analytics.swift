@@ -10,11 +10,23 @@ public class Analytics {
     private init() {}
     
     public func initialize(_ configuration: Configuration) {
-        uploader = Uploader(configuration: configuration)
+        if let uploader = uploader {
+            uploader.configuration = configuration
+        } else {
+            uploader = Uploader(configuration: configuration)
+        }
     }
     
     public func initialize(_ url: URL) {
-        uploader = Uploader(configuration: Configuration(url: url))
+        self.initialize(Configuration(url: url))
+    }
+    
+    public func stop() {
+        let oldUploader = uploader
+        uploader = nil
+        
+        oldUploader?.uploadPendingEvents("Analytics Terminated")
+        oldUploader?.stop()
     }
     
     public func logEvent(_ event: Event) {

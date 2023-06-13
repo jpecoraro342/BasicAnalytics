@@ -38,7 +38,7 @@ internal class Uploader : NSObject {
         }
     }
     
-    private func uploadPendingEvents(_ trigger: String) {
+    internal func uploadPendingEvents(_ trigger: String) {
         Logger.analytics.debug("Uploading events from trigger: \(trigger, privacy: .public)")
         Task {
             await uploadPendingEvents(trigger)
@@ -143,6 +143,16 @@ internal class Uploader : NSObject {
         }
         
         Logger.analytics.debug("recieved response: \(status), body: \(body)")
+    }
+    
+    internal func stop() {
+        notificationObservers.forEach({ observer in
+            NotificationCenter.default.removeObserver(observer)
+            Logger.analytics.debug("Removed observer \(observer.debugDescription ?? "??", privacy: .public)")
+        })
+        
+        timer?.invalidate()
+        timer = nil
     }
 }
 
